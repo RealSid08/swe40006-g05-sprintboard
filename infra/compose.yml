@@ -1,0 +1,139 @@
+name: sprintboard-${ENVIRONMENT:-development}
+services:
+  postgres:
+    image: postgres:17.11-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: convex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set database password}
+      POSTGRES_DB: convex_self_hosted
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U convex -d convex_self_hosted']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  backend:
+    image: ghcr.io/convex/convex-backend@sha256:d715e9ec088784407ca4ba2d3db592702cd328d02c76cdca3852c0018f2a76b4
+    restart: unless-stopped
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-3210}:3210'
+      - '127.0.0.1:${AUTH_PORT:-3211}:3211'
+    environment:
+      POSTGRES_URL: postgresql://convex:${POSTGRES_PASSWORD}@postgres:5432
+      DO_NOT_REQUIRE_SSL: '1'
+      INSTANCE_NAME: convex-self-hosted
+      INSTANCE_SECRET: ${INSTANCE_SECRET:?set instance secret}
+      CONVEX_CLOUD_ORIGIN: ${CONVEX_URL:-http://127.0.0.1:3410}
+      CONVEX_SITE_ORIGIN: ${CONVEX_SITE_URL:-http://127.0.0.1:3411}
+      DISABLE_BEACON: 'true'
+      DISABLE_METRICS_ENDPOINT: 'true'
+      RUST_LOG: info
+    volumes:
+      - convex:/convex/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:3210/version]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+    logging: *logging
+  web:
+    profiles: [application]
+    image: ${WEB_IMAGE:-sprintboard:local}
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3000'
+      NODE_ENV: production
+      CONVEX_URL: ${CONVEX_URL:?set public client URL}
+      CONVEX_SITE_URL: http://backend:3211
+      CONVEX_INTERNAL_URL: http://backend:3210
+      APP_ENVIRONMENT: ${ENVIRONMENT:-development}
+      EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-outbox}
+      RELEASE_SHA: ${RELEASE_SHA:-local}
+      APP_RELEASE: ${RELEASE_SHA:-local}
+    ports:
+      - '127.0.0.1:${WEB_PORT:-3000}:3000'
+    logging: *logging
+  caddy:
+    profiles: [application]
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      API_DOMAIN: ${API_DOMAIN:-api.localhost}
+      AUTH_DOMAIN: ${AUTH_DOMAIN:-auth.localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+    logging: *logging
+  node-exporter:
+    profiles: [monitoring]
+    image: prom/node-exporter:v1.12.1
+    restart: unless-stopped
+    pid: host
+    command: ['--path.rootfs=/host']
+    volumes: ['/:/host:ro,rslave']
+    logging: *logging
+  blackbox:
+    profiles: [monitoring]
+    image: prom/blackbox-exporter:v0.29.0
+    restart: unless-stopped
+    volumes: ['./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro']
+    logging: *logging
+  prometheus:
+    profiles: [monitoring]
+    image: prom/prometheus:v3.15.0
+    restart: unless-stopped
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.retention.time=7d', '--storage.tsdb.retention.size=1GB']
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus:/prometheus
+    ports: ['127.0.0.1:9090:9090']
+    logging: *logging
+  grafana:
+    profiles: [monitoring]
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set Grafana password}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+    ports: ['127.0.0.1:3001:3000']
+    logging: *logging
+  alertmanager:
+    profiles: [monitoring]
+    image: prom/alertmanager:v0.34.1
+    restart: unless-stopped
+    command: ['--config.file=/etc/alertmanager/alertmanager.yml']
+    volumes: ['./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro']
+    logging: *logging
+  alert-sink:
+    profiles: [monitoring]
+    image: python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+    restart: unless-stopped
+    command: [python, /app/alert_sink.py]
+    volumes:
+      - ../scripts/ops/alert_sink.py:/app/alert_sink.py:ro
+      - alert-events:/events
+    logging: *logging
+volumes:
+  alert-events:
+  postgres:
+  convex:
+  caddy:
+  prometheus:
+  grafana:

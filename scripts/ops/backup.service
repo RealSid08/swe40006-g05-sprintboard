@@ -1,0 +1,10 @@
+[Unit]
+Description=SprintBoard encrypted off-host backup
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+User=ec2-user
+WorkingDirectory=/opt/sprintboard/current
+ExecStart=/bin/bash /opt/sprintboard/current/scripts/ops/backup.sh
+UMask=0077

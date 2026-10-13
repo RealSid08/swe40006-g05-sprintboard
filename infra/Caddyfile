@@ -1,0 +1,29 @@
+{
+    servers {
+        metrics
+    }
+}
+{$APP_DOMAIN} {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+    }
+    reverse_proxy web:3000
+}
+{$API_DOMAIN} {
+    # Public browser API only. Administrative deployment uses host loopback.
+    @client path /api/query /api/mutation /api/action /api/sync /api/sync/* /api/*/sync /version
+    handle @client {
+        reverse_proxy backend:3210
+    }
+    respond 404
+}
+{$AUTH_DOMAIN} {
+    reverse_proxy backend:3211
+}
+
+http://:9180 {
+    metrics /metrics
+}

@@ -1,0 +1,14 @@
+node_modules
+.git
+.env*
+.local
+infra/.env
+coverage
+test-results
+playwright-report
+.output
+docs
+.agents
+.claude
+
+reports/
