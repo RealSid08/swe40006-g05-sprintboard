@@ -94,6 +94,46 @@ Resources:
         - {Key: Name, Value: swe40006-g05-production}
         - {Key: Project, Value: SWE40006-G05}
         - {Key: Environment, Value: production}
+  CISecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: CI operator SSH only; no application listeners
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref OperatorCidr
+      Tags: [{Key: Project, Value: SWE40006-G05}]
+  CI:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref CISecurityGroup]
+      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: {VolumeSize: 24, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true}
+      Tags:
+        - {Key: Name, Value: swe40006-g05-ci}
+        - {Key: Project, Value: SWE40006-G05}
+        - {Key: Environment, Value: ci}
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -euo pipefail
+          dnf install -y docker git libicu jq
+          systemctl enable --now docker
+          mkdir -p /usr/local/lib/docker/cli-plugins /opt/sprintboard
+          curl --fail --location --retry 3 https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod 755 /usr/local/lib/docker/cli-plugins/docker-compose
+          usermod -aG docker ec2-user
+          chown ec2-user:ec2-user /opt/sprintboard
+          echo 'vm.max_map_count=262144' > /etc/sysctl.d/99-sprintboard.conf
+          sysctl --system
   StagingAddress:
     Type: AWS::EC2::EIP
     Properties:
@@ -124,6 +164,8 @@ Resources:
           - {Id: ExpireBackups, Status: Enabled, ExpirationInDays: 7, AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}}
       Tags: [{Key: Project, Value: SWE40006-G05}]
 Outputs:
+  CIInstance: {Value: !Ref CI}
+  CIIP: {Value: !GetAtt CI.PublicIp}
   StagingInstance: {Value: !Ref Staging}
   ProductionInstance: {Value: !Ref Production}
   StagingIP: {Value: !Ref StagingAddress}

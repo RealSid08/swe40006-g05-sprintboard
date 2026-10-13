@@ -1,3 +1,4 @@
 self-hosted-runner:
   labels:
     - g05-staging
+    - g05-ci
