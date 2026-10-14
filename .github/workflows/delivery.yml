@@ -17,14 +17,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Scan source history for secrets
+        run: bash scripts/ops/scan-secrets.sh
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           scanners: vuln,misconfig
+          format: json
+          output: reports/security/trivy-source.json
           trivyignores: .trivyignore.yaml
           severity: HIGH,CRITICAL
           exit-code: '1'
@@ -43,7 +44,7 @@ jobs:
         if: always()
         with:
           name: quality-${{ github.sha }}
-          path: reports/coverage/
+          path: reports/
           retention-days: 7
   image:
     needs: quality
@@ -73,6 +74,8 @@ jobs:
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/realsid08/sprintboard-g05@${{ steps.build.outputs.digest }}
+          format: json
+          output: trivy-image.json
           severity: HIGH,CRITICAL
           exit-code: '1'
           version: v0.76.0
@@ -88,6 +91,7 @@ jobs:
           path: |
             release.json
             source.tar.gz
+            trivy-image.json
           retention-days: 7
   staging:
     needs: image
@@ -119,13 +123,22 @@ jobs:
         run: bash scripts/ops/deploy.sh staging
       - name: Run all suites on Test Server before production
         id: gate
+        env:
+          TEST_RUN_ID: ${{ github.run_id }}${{ github.run_attempt }}
         run: |
           set -a
           source /opt/sprintboard/runtime/.env
           set +a
+          mkdir -p test-results playwright-report
           docker build -f infra/Dockerfile.test -t sprintboard-tests:${{ github.sha }} .
-          docker run --rm --network host --env-file /opt/sprintboard/runtime/.env -v "$PWD/test-results:/app/test-results" -v "$PWD/playwright-report:/app/playwright-report" sprintboard-tests:${{ github.sha }} bash -c "pnpm test && pnpm test:integration && pnpm test:e2e"
+          docker run --rm --network host --env-file /opt/sprintboard/runtime/.env -e TEST_RUN_ID="$TEST_RUN_ID" -v "$PWD/test-results:/app/test-results" -v "$PWD/playwright-report:/app/playwright-report" sprintboard-tests:${{ github.sha }} bash -c "pnpm test && pnpm test:integration && pnpm test:e2e"
           echo 'tested=true' >> "$GITHUB_OUTPUT"
+      - name: Remove this run's synthetic test data
+        if: always() && steps.gate.outcome != 'skipped'
+        env:
+          TEST_RUN_ID: ${{ github.run_id }}${{ github.run_attempt }}
+        run: |
+          docker run --rm --network host --env-file /opt/sprintboard/runtime/backend.env -e TEST_RUN_ID="$TEST_RUN_ID" -v "$PWD:/app" -w /app node:24.22.0-bookworm-slim bash -c 'corepack enable && pnpm test:cleanup --prefix "qa-$TEST_RUN_ID"'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
