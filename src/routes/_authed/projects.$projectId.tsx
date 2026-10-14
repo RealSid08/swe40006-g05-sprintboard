@@ -92,8 +92,10 @@ function Board() {
     try {
       await action();
     } catch (error) {
+      // The panel or dialog that started this was unmounted while pending, so report here.
       setDeparting(false);
-      throw error;
+      toast.error(errorMessage(error));
+      return;
     }
     toast.success(message);
     await navigate({ to: "/projects" });

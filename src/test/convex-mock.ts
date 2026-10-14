@@ -1,12 +1,14 @@
 // Test double for convex/react. Queries resolve from a map keyed by function name.
 import { getFunctionName, type FunctionReference } from "convex/server";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
+
+type MutationMock = Mock<(args: unknown) => Promise<unknown>>;
 
 export const convexState = {
   authenticated: true,
   results: new Map<string, unknown>(),
   queryArgs: new Map<string, unknown>(),
-  mutations: new Map<string, ReturnType<typeof vi.fn>>(),
+  mutations: new Map<string, MutationMock>(),
 };
 
 export function resetConvex() {
@@ -16,10 +18,10 @@ export function resetConvex() {
   convexState.mutations.clear();
 }
 
-export function mutationMock(name: string) {
+export function mutationMock(name: string): MutationMock {
   let mock = convexState.mutations.get(name);
   if (!mock) {
-    mock = vi.fn(async () => null);
+    mock = vi.fn<(args: unknown) => Promise<unknown>>(async () => null);
     convexState.mutations.set(name, mock);
   }
   return mock;
