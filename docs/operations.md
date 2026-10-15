@@ -6,7 +6,7 @@ This runbook describes the technical environment. It is not a submitted project 
 
 All project AWS commands target account `877560905830` in `us-east-1`. The Learner Lab permits `us-east-1` and `us-west-2`. The local operations wrapper checks STS identity before AWS calls. It reads temporary lab credentials from ignored `.local/lab-credentials`, never the unrelated business profiles.
 
-CloudFormation stack: `swe40006-g05`. Staging instance: `i-0f29ac1cd34a328bd`, stable address `98.94.118.124`. Production instance: `i-0ab21e0e346aeb102`, stable address `32.195.104.152`.
+CloudFormation stack: `swe40006-g05`. Staging instance: `i-0f29ac1cd34a328bd`, stable address `98.94.118.124`. Production instance: `i-0ab21e0e346aeb102`, stable address `32.195.104.152`. Dedicated CI instance: `i-012fd7de41c6979cb` (no AWS instance profile or application secrets).
 
 Public app origins:
 
@@ -19,7 +19,7 @@ The corresponding `api.` and `auth.` subdomains route client subscriptions and a
 
 1. Sign into AWS Academy and choose **Start Lab**.
 2. Check `python3 scripts/ops/lab_aws.py sts get-caller-identity` after refreshing temporary credentials if needed.
-3. Check the stack and EC2 instance states through the wrapper. Start only the two G05 instances if the lab has not restarted them.
+3. Check the stack and EC2 instance states through the wrapper. Start only the three G05 instances if the lab has not restarted them.
 4. Check each app's `/api/health` and `/api/ready`. Verify the expected release SHA.
 5. Check the repository runner is online: `gh api repos/RealSid08/swe40006-g05-sprintboard/actions/runners`.
 6. Open the synthetic demo account details in the private `.local/*-demo.env` files. Do not include passwords in recordings or submissions.
@@ -72,6 +72,6 @@ AWS SES is unavailable in the Learner Lab due to denied permissions. The demo us
 
 ## Stop costs after use
 
-Stop the two G05 instances when a live app or pipeline is no longer needed. This pauses the staging runner too. Keep the Elastic IPs and data volumes only while stable marking access or recovery is required. Remove the G05 CloudFormation stack when the team no longer needs it; its backup bucket is retained deliberately and needs separate scoped deletion after evidence is preserved.
+Stop the three G05 instances when a live app or pipeline is no longer needed. This pauses both project runners too. Keep the Elastic IPs and data volumes only while stable marking access or recovery is required. Remove the G05 CloudFormation stack when the team no longer needs it; its backup bucket is retained deliberately and needs separate scoped deletion after evidence is preserved.
 
 Never remove the AWS Academy management stack, functions, `LabRole`, or `LabInstanceProfile`. The old `swe40006-task4-board` deployment has already been deleted.
