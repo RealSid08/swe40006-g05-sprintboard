@@ -14,7 +14,7 @@ chmod 700 "$backup"
 restart_backend() { "${compose[@]}" start backend >/dev/null; }
 trap restart_backend EXIT
 "${compose[@]}" stop backend
-"${compose[@]}" exec -T postgres pg_dump -U convex -Fc convex_self_hosted > "$backup/postgres.dump"
+"${compose[@]}" exec -T postgres pg_dump -U convex -Fc convex_self_hosted > "$backup/postgres.dump" < /dev/null
 backend=$("${compose[@]}" ps -aq backend)
 docker run --rm --volumes-from "$backend":ro -v "$backup:/backup" alpine:3.22 tar -czf /backup/convex.tar.gz -C /convex/data .
 "${compose[@]}" start backend
