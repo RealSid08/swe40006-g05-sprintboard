@@ -2,7 +2,7 @@
   "uid": "sprintboard-operations",
   "title": "SprintBoard host and application health",
   "schemaVersion": 40,
-  "version": 2,
+  "version": 3,
   "refresh": "15s",
   "time": {
     "from": "now-15m",
@@ -161,7 +161,7 @@
       },
       "targets": [
         {
-          "expr": "rate(node_network_receive_bytes_total{device!=\"lo\"}[2m]) + rate(node_network_transmit_bytes_total{device!=\"lo\"}[2m])",
+          "expr": "rate(node_network_receive_bytes_total{device=~\"eth.*|en.*\"}[2m]) + rate(node_network_transmit_bytes_total{device=~\"eth.*|en.*\"}[2m])",
           "refId": "A",
           "legendFormat": "{{job}} {{instance}} {{device}}"
         }

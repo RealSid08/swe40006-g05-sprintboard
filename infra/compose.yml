@@ -81,6 +81,7 @@ services:
     image: prom/node-exporter:v1.12.1
     restart: unless-stopped
     pid: host
+    network_mode: host
     command: ['--path.rootfs=/host']
     volumes: ['/:/host:ro,rslave']
     logging: *logging
@@ -94,6 +95,7 @@ services:
     profiles: [monitoring]
     image: prom/prometheus:v3.15.0
     restart: unless-stopped
+    extra_hosts: ["host.docker.internal:host-gateway"]
     command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.retention.time=7d', '--storage.tsdb.retention.size=1GB']
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
