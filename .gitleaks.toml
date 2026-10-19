@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated fixtures and non-secret dependency metadata"
+paths = [
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)skills-lock\.json$''',
+  '''(^|/)convex/_generated/''',
+]

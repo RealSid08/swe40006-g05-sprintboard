@@ -1,0 +1,20 @@
+groups:
+  - name: sprintboard
+    rules:
+      - alert: HostCPUHigh
+        expr: 100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))) > 80
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: 'Host CPU above 80 percent for five minutes'}
+      - alert: HostMemoryHigh
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 85
+        for: 5m
+        labels: {severity: warning}
+      - alert: HostDiskLow
+        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} / node_filesystem_size_bytes < 0.15
+        for: 1m
+        labels: {severity: critical}
+      - alert: ServiceUnavailable
+        expr: (up{job=~"host|convex|caddy"} == 0) or (probe_success{job="convex"} == 0)
+        for: 30s
+        labels: {severity: critical}

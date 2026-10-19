@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter var", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-canvas: #f6f5f1;
+  --color-surface: #ffffff;
+  --color-sunken: #efede7;
+  --color-line: #e4e1d9;
+  --color-line-strong: #d3cfc4;
+  --color-ink: #1c1917;
+  --color-ink-soft: #57534e;
+  --color-ink-faint: #8a847b;
+
+  --color-accent: #0f766e;
+  --color-accent-strong: #115e59;
+  --color-accent-soft: #e0f2ef;
+
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+
+  --color-status-todo: #8a847b;
+  --color-status-progress: #2563eb;
+  --color-status-review: #c27803;
+  --color-status-done: #15803d;
+
+  --shadow-card: 0 1px 0 rgb(28 25 23 / 0.04), 0 1px 3px rgb(28 25 23 / 0.06);
+  --shadow-lift: 0 8px 24px -8px rgb(28 25 23 / 0.18), 0 2px 6px rgb(28 25 23 / 0.06);
+  --shadow-dialog: 0 24px 64px -16px rgb(28 25 23 / 0.35);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans;
+    font-feature-settings: "cv11", "ss01";
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+  dialog::backdrop {
+    background: rgb(28 25 23 / 0.38);
+    backdrop-filter: blur(2px);
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 h-9 text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-55 disabled:pointer-events-none select-none;
+}
+@utility btn-primary {
+  @apply btn bg-accent text-white hover:bg-accent-strong shadow-card;
+}
+@utility btn-secondary {
+  @apply btn bg-surface text-ink border border-line hover:border-line-strong hover:bg-sunken/60 shadow-card;
+}
+@utility btn-ghost {
+  @apply btn text-ink-soft hover:text-ink hover:bg-sunken;
+}
+@utility btn-danger {
+  @apply btn bg-danger text-white hover:bg-[#912018] shadow-card;
+}
+@utility btn-sm {
+  @apply h-8 px-2.5 text-[13px];
+}
+@utility icon-btn {
+  @apply inline-flex items-center justify-center size-8 rounded-lg text-ink-soft hover:text-ink hover:bg-sunken transition-colors;
+}
+@utility input {
+  @apply block w-full rounded-lg border border-line bg-surface px-3 h-10 text-sm text-ink placeholder:text-ink-faint shadow-[inset_0_1px_1px_rgb(28_25_23/0.03)] transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/15 aria-invalid:border-danger;
+}
+textarea.input {
+  height: auto;
+  padding-block: 0.625rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+select.input {
+  padding-right: 2rem;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2357534e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.6rem center;
+}
+@utility label {
+  @apply block text-[13px] font-medium text-ink mb-1.5;
+}
+@utility card {
+  @apply rounded-xl border border-line bg-surface shadow-card;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-md px-1.5 h-5 text-[11px] font-semibold uppercase tracking-wide;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 180ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}

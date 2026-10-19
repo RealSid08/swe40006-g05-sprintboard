@@ -1,0 +1,10 @@
+misconfigurations:
+  - id: AVD-AWS-0132
+    paths:
+      - infra/cloudformation.yml
+    expired_at: 2026-11-01
+    statement: >-
+      G05 temporary synthetic Learner Lab backups use S3-managed AES256 encryption,
+      all public access blocked and seven-day expiry. SSE-S3 satisfies the project's
+      encrypted-backup requirement. Customer-managed key administration is outside
+      this temporary lab scope. Owner G05; implementation review 2026-10-20.

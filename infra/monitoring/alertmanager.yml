@@ -1,0 +1,11 @@
+route:
+  receiver: private-demo-webhook
+  group_by: [alertname]
+  group_wait: 5s
+  group_interval: 15s
+  repeat_interval: 1h
+receivers:
+  - name: private-demo-webhook
+    webhook_configs:
+      - url: http://alert-sink:8080/alerts
+        send_resolved: true
