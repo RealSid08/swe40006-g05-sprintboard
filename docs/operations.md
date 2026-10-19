@@ -48,7 +48,7 @@ ssh -N -i .local/operator-key -o UserKnownHostsFile=.local/known_hosts \
 
 Open Grafana on `http://127.0.0.1:3425`; credentials are in the private environment file. Replace the host address to inspect production. Close the tunnel after use.
 
-Node Exporter supplies host counters. Caddy supplies HTTP rate and latency histograms. Dashboard queries exclude status101 WebSocket lifetimes and the internal metrics handler from ordinary HTTP latency/rate. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
+Node Exporter uses the host PID and network namespaces with a read-only host root mount. Prometheus reaches it through the Docker host gateway; security groups do not expose port9100 publicly. Network panels select physical eth/en interfaces, excluding Docker bridges and veth traffic. Caddy supplies HTTP rate and latency histograms. Dashboard queries exclude status101 WebSocket lifetimes and the internal metrics handler from ordinary HTTP latency/rate. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
 
 Alertmanager delivers notifications to a private webhook receiver retained in the `alert-events` volume. AWS SES access is denied, so notifications are not emailed. A webhook receipt proves internal delivery only. The staging probe-outage rehearsal fired and delivered ServiceUnavailable, then recovered all four targets.
 
