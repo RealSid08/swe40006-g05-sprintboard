@@ -28,9 +28,9 @@ Lab sessions expire after four hours. Refresh the session before presenting. The
 
 ## Deploy a release
 
-Pushes to the repository's default project branch run hosted quality checks and build an immutable GHCR image. The trusted staging runner deploys that digest and its matching Convex source, then runs unit, real-backend integration, and browser acceptance suites on the Test Server. Production promotion depends on successful staging tests and uses the same image digest.
+Pushes to the repository's default project branch run quality checks on the dedicated CI EC2 instance and build an immutable GHCR image. The trusted staging runner deploys that digest and its matching Convex source, then runs unit, real-backend integration, and browser acceptance suites on the Test Server. Production promotion depends on successful staging tests and uses the same image digest.
 
-The lab cannot create the OIDC role proposed in the brief. The dedicated staging runner instead uses `LabInstanceProfile` and SSM to deploy production. Pull requests run on hosted runners and cannot enter the deployment jobs. The repository is private. Only trusted contributors may push to the deployment branch.
+GitHub refused hosted execution due to an account billing/spending-limit issue. A separate CI EC2 instance now runs builds. It has no AWS instance role and no application secrets. The lab cannot create the OIDC role proposed in the brief. The dedicated staging runner instead uses `LabInstanceProfile` and SSM to deploy production. Only trusted same-repository pull requests can run on the private CI runner. Fork pull requests cannot enter this worker. Pull requests cannot enter the deployment jobs. The repository is private. Only trusted contributors may push to the deployment branch.
 
 Registry authorization for production is short-lived. It travels inside an encrypted private S3 transport object, never in SSM command text. Promotion removes the object and extracted registry configuration after use.
 
