@@ -48,9 +48,9 @@ ssh -N -i .local/operator-key -o UserKnownHostsFile=.local/known_hosts \
 
 Open Grafana on `http://127.0.0.1:3425`; credentials are in the private environment file. Replace the host address to inspect production. Close the tunnel after use.
 
-Node Exporter supplies host counters. Caddy supplies HTTP rate and latency histograms. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
+Node Exporter supplies host counters. Caddy supplies HTTP rate and latency histograms. Dashboard queries exclude status101 WebSocket lifetimes and the internal metrics handler from ordinary HTTP latency/rate. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
 
-Alertmanager delivers notifications to a private webhook receiver retained in the `alert-events` volume. AWS SES access is denied, so notifications are not emailed. A webhook receipt proves internal delivery only.
+Alertmanager delivers notifications to a private webhook receiver retained in the `alert-events` volume. AWS SES access is denied, so notifications are not emailed. A webhook receipt proves internal delivery only. The staging probe-outage rehearsal fired and delivered ServiceUnavailable, then recovered all four targets.
 
 ## Back up and rehearse restoration
 
@@ -64,7 +64,7 @@ The authentication rebind is required: a copied auth configuration can otherwise
 
 The deploy script records the previous compatible release before changing services. A failed deployment check reapplies its Convex functions, starts the previous web digest, and verifies web/backend release identity and database write/read. This supports additive schema changes only. It does not undo destructive data migrations.
 
-Do not claim the five-minute rollback target until the timed rehearsal passes. Raw execution records belong in `../project-implementation/evidence/`.
+The manual staging fault rehearsal on20October2026 restored the previous healthy release in11seconds after an HTTP502 was detected, including a database write/read check, then restored the current release. This does not prove automatic production rollback. Raw execution records belong in `../project-implementation/evidence/`.
 
 ## Email limitation
 
