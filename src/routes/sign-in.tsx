@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { AuthLayout } from "~/components/AuthLayout";
+import { useEmailDelivery } from "~/components/DemoNotice";
 import { Field, FormError, Spinner } from "~/components/ui";
 import { authClient } from "~/lib/auth-client";
 import { safeRedirect } from "~/lib/redirect";
@@ -25,6 +26,7 @@ const NOTICES = {
 
 function SignIn() {
   const search = Route.useSearch();
+  const emailDelivery = useEmailDelivery();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +42,12 @@ function SignIn() {
     if (signInError) {
       setPending(false);
       if (signInError.code === "EMAIL_NOT_VERIFIED") {
-        setUnverified(true);
-        setError("Verify your email before signing in. We just sent you a fresh link.");
+        if (emailDelivery) {
+          setUnverified(true);
+          setError("Verify your email before signing in. We just sent you a fresh link.");
+        } else {
+          setError("This account is not verified, and this demo cannot send verification emails. Use a provided demo account.");
+        }
       } else {
         setError(signInError.message ?? "Incorrect email or password.");
       }
@@ -56,12 +62,14 @@ function SignIn() {
       title="Welcome back"
       subtitle="Sign in to see your projects and boards."
       footer={
-        <>
-          New to SprintBoard?{" "}
-          <Link to="/sign-up" className="font-medium text-accent hover:underline">
-            Create an account
-          </Link>
-        </>
+        emailDelivery ? (
+          <>
+            New to SprintBoard?{" "}
+            <Link to="/sign-up" className="font-medium text-accent hover:underline">
+              Create an account
+            </Link>
+          </>
+        ) : undefined
       }
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
@@ -100,11 +108,13 @@ function SignIn() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        <div className="flex justify-end">
-          <Link to="/forgot-password" className="text-[13px] font-medium text-accent hover:underline">
-            Forgot password?
-          </Link>
-        </div>
+        {emailDelivery ? (
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-[13px] font-medium text-accent hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+        ) : null}
         <button type="submit" className="btn-primary h-10 w-full" disabled={pending || !email || !password}>
           {pending ? <Spinner /> : null}
           Sign in

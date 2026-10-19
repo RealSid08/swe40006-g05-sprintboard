@@ -1,20 +1,11 @@
-# Parent live coordination
+# Coordination log (superseded)
 
-User chose synthetic demo accounts for now (explicit reply), no real transactional email delivery. Production must truthfully show demo scope and allow pre-created verified demo account; do not enable public test helpers/reset in production. Please provide safe CLI seed mechanism for creating a verified synthetic demo account using Better Auth adapter admin INTERNAL mutation, operator only. Outbox local/staging for acceptance flows remains appropriate. Keep real mail incomplete in deck.
+This file held live coordination notes between the build agents during implementation on 19 and 20 October 2026. Its addresses, plans and blockers were temporary and are now out of date.
 
-Local .env.local admin config ready. docker context colima-swe40006-g05 backend and postgres up; admin key private .local/convex-admin. compose file infra/compose.yml pinned digest.
-AWS stack swe40006-g05 CREATE_COMPLETE. Staging 44.201.114.202, production 44.204.23.168. App domains planned https://staging.44-201-114-202.sslip.io and https://sprintboard.44-204-23-168.sslip.io. API domains prefix api. and auth. before each root. GitHub private repo https://github.com/RealSid08/swe40006-g05-sprintboard (empty; parent will commit/push feature branch). No main pushes.
+Current facts are maintained in:
 
-Official Canvas templates located: presentation file 45714624, contribution file 45792181. Parent retrieving. Course authenticated Chrome is available through CUA browser 1 (NOT local native Chrome kiosk). Assignment verified live AI drafting prohibition; draft must be labelled AI-generated working draft requiring team rewrite. Parent will not submit anything.
+- `implementation-status.md`: application scope and verified results
+- `operations.md`: AWS hosts, deployment, monitoring, backup and recovery
+- `../../project-implementation/HANDOVER.md`: deliverables, verified outcome and presentation preparation
 
-User additionally says clearly state SES limitation. Exact verified evidence: `sesv2 get-account` returned AccessDeniedException for ses:GetAccount, no identity policy allows it in assumed voclabs role. State: "AWS SES is unavailable in the Learner Lab due to denied permissions. The demo uses synthetic accounts; real verification and password-reset email delivery is not demonstrated."
-
-Official template downloads through authenticated Canvas UI repeatedly time out. User asked to download templates into project folder; use official template if it appears, otherwise mark draft template matching pending. Live preview shows 10 slides: Title, Acknowledgement, Overview, Background, Scope/Objectives, Deliverables, Design/Tradeoffs, Execution/Challenges, Demo, Thank you. Need reduce to 4-8 per requirements while preserving template style.
-
-OFFICIAL TEMPLATES RECEIVED FROM USER. Files now ../project-implementation/source-materials/Presentation template-1.pptx and ../project-implementation/source-materials/Project_Presentation_Contribution_Document.doc. Use provided actual deck. Contribution template: populate names/IDs only if safe, leave actual contributions and signatures blank/pending for team. Provide unsigned PDF with exact required filename, clearly pending signatures. Parent told user deck AI-generated working draft requiring rewrite per live Canvas rule.
-
-Stable Elastic IPs are now assigned to avoid HTTPS/DNS changes after lab restarts. FINAL endpoints: staging https://staging.98-94-118-124.sslip.io, production https://sprintboard.32-195-104-152.sslip.io, api./auth. prefixes. Older IPs above were temporary bootstrap addresses. Parent updates envs. New SSH hosts98.94.118.124 and32.195.104.152.
-
-Verified AWS staging recovery evidence (raw logs ../project-implementation/evidence/aws): staging-backup-rehearsal.log consistent pg_dump+Convex storage encrypted S3 backup; staging-restore-rehearsal.log first attempt failed JWT key lookup against live staging issuer. FIX: isolated restored backend rebinds its own internal origin and reapplies same source auth configuration. staging-restore-rehearsal-rebound.log passed SHA checksums, DB write/read, actual synthetic account authentication, persisted existing project, authenticated project create/read/remove. Temporary restore containers/volumes removed and port3520/3521 released. This is AWS staging proof, not production rollback. Monitoring first direct Convex /metrics scrape failed unsupported vmhistogram. FIX: Prometheus now uses Blackbox read-only backend readiness probe while host/Caddy supply metrics; all four scrape targets up (staging-prometheus-targets-fixed.json). Screenshots being captured. Include genuine challenge/solution with correct scope in deck.
-
-ARCHITECTURE CHANGE verified17:26Z: GitHub hostedjob refusedstart dueaccountpayments/spendinglimit (evidence/ci-checkpoint-annotations.json). No actualbuildran, no deployment. Parent provisions separateCI EC2 (no AWSrole/appsecrets) and g05-ci worker; quality+image onCI EC2, staging tests onexistingseparate g05-staging EC2, production viaSSM separateEC2. Fourrequiredrolesstilldistinct: GitHubrepo,CI EC2,Test/Staging EC2,Prod EC2 (pluslocaldev). Do notclaimhostedCI successfulorMicrosoftbillingchanges. Coretest/coveragegatesremainrequired.
+The earlier text remains in Git history.

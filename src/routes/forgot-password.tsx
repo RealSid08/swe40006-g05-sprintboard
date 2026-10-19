@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { AuthLayout } from "~/components/AuthLayout";
+import { useEmailDelivery } from "~/components/DemoNotice";
 import { Field, FormError, Spinner } from "~/components/ui";
 import { authClient } from "~/lib/auth-client";
 
@@ -10,9 +11,30 @@ export const Route = createFileRoute("/forgot-password")({
 });
 
 function ForgotPassword() {
+  const emailDelivery = useEmailDelivery();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const footer = (
+    <Link to="/sign-in" className="font-medium text-accent hover:underline">
+      Back to sign in
+    </Link>
+  );
+
+  if (!emailDelivery) {
+    return (
+      <AuthLayout
+        title="Password reset is unavailable"
+        subtitle="This demo cannot send reset emails."
+        footer={footer}
+      >
+        <Link to="/sign-in" className="btn-primary h-10 w-full">
+          Sign in with a demo account
+        </Link>
+      </AuthLayout>
+    );
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -34,11 +56,7 @@ function ForgotPassword() {
     <AuthLayout
       title="Reset your password"
       subtitle="Enter your account email and we will send you a reset link."
-      footer={
-        <Link to="/sign-in" className="font-medium text-accent hover:underline">
-          Back to sign in
-        </Link>
-      }
+      footer={footer}
     >
       {state === "sent" ? (
         <div role="status" className="rounded-xl border border-accent/20 bg-accent-soft p-4 text-sm text-accent-strong">
