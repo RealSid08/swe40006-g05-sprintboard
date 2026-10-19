@@ -130,7 +130,8 @@ jobs:
           set +a
           mkdir -p test-results playwright-report
           docker build -f infra/Dockerfile.test -t sprintboard-tests:${{ github.sha }} .
-          docker run --rm --network host -e SITE_URL -e CONVEX_URL -e CONVEX_SITE_URL -e TEST_OUTBOX_TOKEN -e READINESS_TOKEN -e CI=true -e TEST_RUN_ID="$TEST_RUN_ID" -v "$PWD/test-results:/app/test-results" -v "$PWD/playwright-report:/app/playwright-report" sprintboard-tests:${{ github.sha }} bash -c "pnpm test && pnpm test:integration && pnpm test:e2e"
+          docker run --rm --network none -e CI=true sprintboard-tests:${{ github.sha }} pnpm test
+          docker run --rm --network host -e SITE_URL -e CONVEX_URL -e CONVEX_SITE_URL -e TEST_OUTBOX_TOKEN -e READINESS_TOKEN -e CI=true -e TEST_RUN_ID="$TEST_RUN_ID" -v "$PWD/test-results:/app/test-results" -v "$PWD/playwright-report:/app/playwright-report" sprintboard-tests:${{ github.sha }} bash -c "pnpm test:integration && pnpm test:e2e"
           echo 'tested=true' >> "$GITHUB_OUTPUT"
       - name: Remove this run's synthetic test data
         if: always() && steps.gate.outcome != 'skipped'
