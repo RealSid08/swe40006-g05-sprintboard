@@ -138,10 +138,7 @@ jobs:
         env:
           TEST_RUN_ID: ${{ github.run_id }}${{ github.run_attempt }}
         run: |
-          set -a
-          source /opt/sprintboard/runtime/backend.env
-          set +a
-          node scripts/test-cleanup.mjs --prefix "qa-$TEST_RUN_ID"
+          node --env-file=/opt/sprintboard/runtime/backend.env scripts/test-cleanup.mjs --prefix "qa-$TEST_RUN_ID"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
