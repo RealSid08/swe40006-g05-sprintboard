@@ -14,7 +14,7 @@ const requestDuration = new Trend('request_duration', true);
 let previousStatus;
 const thresholds = {'operation_failures':['rate<0.01'],'http_req_failed{phase:steady}':['rate<0.01']};
 if (__ENV.BASELINE_P95_MS) thresholds.operation_duration = [`p(95)<${Number(__ENV.BASELINE_P95_MS)*1.2}`];
-export const options = {scenarios:{baseline:{executor:'constant-vus',vus:25,duration:'5m'}},thresholds,summaryTrendStats:['avg','med','p(95)','max']};
+export const options = {setupTimeout:'3m',teardownTimeout:'2m',scenarios:{baseline:{executor:'constant-vus',vus:25,duration:'5m'}},thresholds,summaryTrendStats:['avg','med','p(95)','max']};
 function call(token,path,args,phase,operation) {
   const response=http.post(`${backend}/api/${operation}`,JSON.stringify({path,args,format:'json'}),{headers:{'content-type':'application/json',authorization:`Bearer ${token}`},tags:{phase,name:path}});
   if(phase==='steady') requestDuration.add(response.timings.duration,{operation:path});
