@@ -69,9 +69,9 @@ SEED_ACCOUNT_PASSWORD='...' pnpm seed:account --email demo.member@example.test -
 pnpm seed:account --demo-project --owner demo.owner@example.test --member demo.member@example.test
 ```
 
-Idempotent: re-running resets the password and keeps the account verified. With no
-`SEED_ACCOUNT_PASSWORD`, a random password is generated and printed once. Without the CLI,
-the equivalent is `npx convex run seed:createVerifiedAccount '{"email":"...","name":"...","password":"..."}'`.
+Idempotent: re-running resets the password and keeps the account verified.
+`SEED_ACCOUNT_PASSWORD` (12+ characters) is required and is never printed; the CLI outputs only
+`{email, created}`. Without the CLI, the equivalent is `npx convex run seed:createVerifiedAccount '{"email":"...","name":"...","password":"..."}'`.
 
 ## Deploying Convex functions
 

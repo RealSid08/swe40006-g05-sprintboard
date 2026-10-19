@@ -5,8 +5,8 @@
 //   SEED_ACCOUNT_PASSWORD='...' node scripts/seed-account.mjs --email demo.owner@example.test --name "Demo Owner"
 //   node scripts/seed-account.mjs --demo-project --owner demo.owner@example.test --member demo.member@example.test
 //
-// If SEED_ACCOUNT_PASSWORD is empty, a random password is generated and printed once.
-// The password is passed to the Convex CLI as a process argument on the operator host only.
+// SEED_ACCOUNT_PASSWORD is required (12+ characters) and is never printed. It is passed to the
+// Convex CLI as a process argument on the operator host only.
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
 
@@ -40,10 +40,10 @@ if (values["demo-project"]) {
 } else {
   if (!values.email || !values.name) throw new Error("--email and --name are required");
   const password = process.env.SEED_ACCOUNT_PASSWORD ?? "";
-  const result = run("seed:createVerifiedAccount", {
-    email: values.email,
-    name: values.name,
-    ...(password ? { password } : {}),
-  });
-  console.log(JSON.stringify(result));
+  if (password.length < 12) {
+    console.error("Set SEED_ACCOUNT_PASSWORD (12+ characters) in the environment; it is never printed.");
+    process.exit(2);
+  }
+  const result = run("seed:createVerifiedAccount", { email: values.email, name: values.name, password });
+  console.log(JSON.stringify({ email: result.email, created: result.created }));
 }
