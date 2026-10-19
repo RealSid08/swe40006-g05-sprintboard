@@ -137,7 +137,10 @@ jobs:
         env:
           TEST_RUN_ID: ${{ github.run_id }}${{ github.run_attempt }}
         run: |
-          docker run --rm --network host --env-file /opt/sprintboard/runtime/backend.env -e TEST_RUN_ID="$TEST_RUN_ID" -v "$PWD:/app" -w /app node:24.22.0-bookworm-slim bash -c 'corepack enable && pnpm test:cleanup --prefix "qa-$TEST_RUN_ID"'
+          set -a
+          source /opt/sprintboard/runtime/backend.env
+          set +a
+          node scripts/test-cleanup.mjs --prefix "qa-$TEST_RUN_ID"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
