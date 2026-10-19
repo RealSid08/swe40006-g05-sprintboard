@@ -33,7 +33,7 @@ services:
       INSTANCE_NAME: convex-self-hosted
       INSTANCE_SECRET: ${INSTANCE_SECRET:?set instance secret}
       CONVEX_CLOUD_ORIGIN: ${CONVEX_URL:-http://127.0.0.1:3410}
-      CONVEX_SITE_ORIGIN: ${CONVEX_SITE_URL:-http://127.0.0.1:3411}
+      CONVEX_SITE_ORIGIN: ${BACKEND_SITE_ORIGIN:-${CONVEX_SITE_URL:-http://127.0.0.1:3411}}
       DISABLE_BEACON: 'true'
       DISABLE_METRICS_ENDPOINT: 'true'
       RUST_LOG: info

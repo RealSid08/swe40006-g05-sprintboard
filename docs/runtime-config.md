@@ -33,7 +33,7 @@ harmless to keep it.
 
 | Name | Required | Meaning |
 |---|---|---|
-| `SITE_URL` | yes | Public web origin, e.g. `https://sprintboard.44-204-23-168.sslip.io`. Better Auth base URL and trusted origin; email links point here. |
+| `SITE_URL` | yes | Public web origin, e.g. `https://sprintboard.32-195-104-152.sslip.io`. Better Auth base URL and trusted origin; email links point here. |
 | `BETTER_AUTH_SECRET` | yes | 32+ random bytes, unique per environment. |
 | `APP_ENVIRONMENT` | yes | `staging` or `production` (production refuses `EMAIL_TRANSPORT=outbox`). |
 | `APP_RELEASE` | no | Convex function release id (commit SHA), reported by `/health/*`. |
@@ -77,3 +77,13 @@ Idempotent: re-running resets the password and keeps the account verified.
 
 `npx convex deploy` (or `convex dev --once`) with `CONVEX_SELF_HOSTED_URL` and
 `CONVEX_SELF_HOSTED_ADMIN_KEY`. Schema changes are additive only.
+
+## Local Docker issuer discovery
+
+For the local Compose backend mapped to host ports3410/3411, set
+`BACKEND_SITE_ORIGIN=http://127.0.0.1:3211` in the private Compose env file.
+Keep the web's `CONVEX_SITE_URL=http://127.0.0.1:3411`. The backend discovers its
+own signing keys inside its container; the web reaches the mapped host port.
+Reapply Convex functions after changing this origin. This fixes the local JWKS
+failure without adding a required cloud setting. Verified with a real login,
+project write/read and task state change in `local-compose-auth-smoke.log`.
