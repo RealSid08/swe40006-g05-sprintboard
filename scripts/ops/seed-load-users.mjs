@@ -7,7 +7,7 @@ if(!/^[a-z0-9-]+$/.test(runId??'')) throw new Error('RUN_ID must be a unique low
 if(process.env.APP_ENVIRONMENT!=='staging') throw new Error('Load accounts are restricted to staging');
 const accounts=[];
 for(let i=0;i<25;i++) {
-  const email=`g05-load-${runId}-${i}@example.test`;
+  const email=`qa-load-${runId}-${i}@example.test`;
   const password=randomBytes(24).toString('base64url');
   execFileSync('pnpm',['exec','convex','run','seed:createVerifiedAccount',JSON.stringify({email,name:`Load user ${i}`,password})],{stdio:['ignore','ignore','inherit']});
   accounts.push({email,password});
