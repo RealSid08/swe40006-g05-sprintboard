@@ -80,7 +80,7 @@ Idempotent: re-running resets the password and keeps the account verified.
 
 ## Local Docker issuer discovery
 
-For the local Compose backend mapped to host ports3410/3411, set
+For the local Compose backend mapped to host ports 3410/3411, set
 `BACKEND_SITE_ORIGIN=http://127.0.0.1:3211` in the private Compose env file.
 Keep the web's `CONVEX_SITE_URL=http://127.0.0.1:3411`. The backend discovers its
 own signing keys inside its container; the web reaches the mapped host port.

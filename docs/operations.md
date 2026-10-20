@@ -48,7 +48,7 @@ ssh -N -i .local/operator-key -o UserKnownHostsFile=.local/known_hosts \
 
 Open Grafana on `http://127.0.0.1:3425`; credentials are in the private environment file. Replace the host address to inspect production. Close the tunnel after use.
 
-Node Exporter uses the host PID and network namespaces with a read-only host root mount. Prometheus reaches it through the Docker host gateway; security groups do not expose port9100 publicly. Network panels select physical eth/en interfaces, excluding Docker bridges and veth traffic. Caddy supplies HTTP rate and latency histograms. Dashboard queries exclude status101 WebSocket lifetimes and the internal metrics handler from ordinary HTTP latency/rate. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
+Node Exporter uses the host PID and network namespaces with a read-only host root mount. Prometheus reaches it through the Docker host gateway; security groups do not expose port 9100 publicly. Network panels select physical eth/en interfaces, excluding Docker bridges and veth traffic. Caddy supplies HTTP rate and latency histograms. Dashboard queries exclude status 101 WebSocket lifetimes and the internal metrics handler from ordinary HTTP latency/rate. Blackbox Exporter checks the backend's read-only readiness endpoint. Direct Convex metrics were rejected by Prometheus with `invalid metric type "vmhistogram"`; the deployment uses HTTP probes instead of claiming those metrics were ingested.
 
 Alertmanager delivers notifications to a private webhook receiver retained in the `alert-events` volume. AWS SES access is denied, so notifications are not emailed. A webhook receipt proves internal delivery only. The staging probe-outage rehearsal fired and delivered ServiceUnavailable, then recovered all four targets.
 
@@ -56,7 +56,7 @@ Alertmanager delivers notifications to a private webhook receiver retained in th
 
 `/opt/sprintboard/current/scripts/ops/backup.sh` stops Convex, takes a consistent PostgreSQL dump and Convex storage archive, restarts Convex, records checksums, and uploads an encrypted private S3 package. Backups expire after seven days. The deployment installs a nightly systemd timer and backs up before later releases. Environment secrets are recovered separately from the operator's private configuration.
 
-Run `scripts/ops/restore-rehearsal.sh <backups/staging/timestamp.tar.gz>` on staging from a complete source release. It creates separate Docker volumes and loopback ports3520/3521, restores both data stores, reapplies the same source with local issuer discovery, and verifies checksums, database writes, account authentication, and project read/write. It removes its own containers and volumes on exit. It refuses production backups.
+Run `scripts/ops/restore-rehearsal.sh <backups/staging/timestamp.tar.gz>` on staging from a complete source release. It creates separate Docker volumes and loopback ports 3520/3521, restores both data stores, reapplies the same source with local issuer discovery, and verifies checksums, database writes, account authentication, and project read/write. It removes its own containers and volumes on exit. It refuses production backups.
 
 The authentication rebind is required: a copied auth configuration can otherwise fetch the live instance's JWKS and reject a token signed by the restored instance.
 
@@ -64,7 +64,7 @@ The authentication rebind is required: a copied auth configuration can otherwise
 
 The deploy script records the previous compatible release before changing services. A failed deployment check reapplies its Convex functions, starts the previous web digest, and verifies web/backend release identity and database write/read. This supports additive schema changes only. It does not undo destructive data migrations.
 
-The manual staging fault rehearsal on20October2026 restored the previous healthy release in11seconds after an HTTP502 was detected, including a database write/read check, then restored the current release. This does not prove automatic production rollback. Raw execution records belong in `../project-implementation/evidence/`.
+The manual staging fault rehearsal on 20 October 2026 restored the previous healthy release in 11 s after an HTTP 502 was detected, including a database write/read check, then restored the current release. This does not prove automatic production rollback. Raw execution records belong in `../project-implementation/evidence/`.
 
 ## Email limitation
 

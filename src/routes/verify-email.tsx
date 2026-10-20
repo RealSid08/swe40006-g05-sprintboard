@@ -3,6 +3,7 @@ import { MailCheck } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { AuthLayout } from "~/components/AuthLayout";
+import { useEmailDelivery } from "~/components/DemoNotice";
 import { FormError, Spinner } from "~/components/ui";
 import { authClient } from "~/lib/auth-client";
 
@@ -17,10 +18,31 @@ export const Route = createFileRoute("/verify-email")({
 
 function VerifyEmail() {
   const { email, error: linkError } = Route.useSearch();
+  const emailDelivery = useEmailDelivery();
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(
     linkError ? "That verification link is invalid or has expired. Send a new one below." : null,
   );
+
+  const footer = (
+    <Link to="/sign-in" className="font-medium text-accent hover:underline">
+      Back to sign in
+    </Link>
+  );
+
+  if (!emailDelivery) {
+    return (
+      <AuthLayout
+        title="Email verification is unavailable"
+        subtitle="This demo cannot send verification emails, so new accounts cannot be activated."
+        footer={footer}
+      >
+        <Link to="/sign-in" className="btn-primary h-10 w-full">
+          Sign in with a demo account
+        </Link>
+      </AuthLayout>
+    );
+  }
 
   async function resend() {
     if (!email) return;
@@ -47,11 +69,7 @@ function VerifyEmail() {
           "We sent a verification link to the address you registered with."
         )
       }
-      footer={
-        <Link to="/sign-in" className="font-medium text-accent hover:underline">
-          Back to sign in
-        </Link>
-      }
+      footer={footer}
     >
       <div className="space-y-5">
         <FormError message={error} />

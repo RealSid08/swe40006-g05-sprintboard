@@ -58,13 +58,58 @@ describe("route guards", () => {
   });
 });
 
+const signUpLinks = () => screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "/sign-up");
+
 describe("landing", () => {
-  it("presents the product and the demo limitation when email is disabled", () => {
-    routerState.context.config.emailDelivery = false;
+  it("offers sign-up when email delivery works", () => {
     renderPage(Landing);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Plan the sprint");
-    expect(screen.getByTestId("demo-notice")).toBeInTheDocument();
+    expect(screen.queryByTestId("demo-notice")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/sign-up");
+  });
+
+  it("sends visitors to sign in instead of sign-up when email is disabled", () => {
+    routerState.context.config.emailDelivery = false;
+    renderPage(Landing);
+    expect(screen.getByTestId("demo-notice")).toBeInTheDocument();
+    expect(signUpLinks()).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Sign in with a demo account" })).toHaveAttribute("href", "/sign-in");
+  });
+});
+
+describe("without email delivery", () => {
+  beforeEach(() => {
+    routerState.context.config.emailDelivery = false;
+  });
+
+  it("closes sign-up and points to sign in", () => {
+    renderPage(SignUp);
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go to sign in" })).toHaveAttribute("href", "/sign-in");
+  });
+
+  it("hides sign-up and recovery links on sign in and still rejects unverified accounts", async () => {
+    auth.signIn.email.mockResolvedValueOnce({ error: { code: "EMAIL_NOT_VERIFIED", message: "x" } });
+    renderPage(SignIn);
+    expect(signUpLinks()).toHaveLength(0);
+    expect(screen.queryByRole("link", { name: "Forgot password?" })).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Email"), "a@example.test");
+    await userEvent.type(screen.getByLabelText("Password"), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("not verified");
+    expect(screen.queryByRole("link", { name: "Open verification help" })).not.toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it("does not offer to send reset or verification emails", () => {
+    const { unmount } = renderPage(Forgot);
+    expect(screen.queryByRole("button", { name: "Send reset link" })).not.toBeInTheDocument();
+    unmount();
+    routerState.search = { email: "ada@example.test" };
+    renderPage(Verify);
+    expect(screen.queryByRole("button", { name: "Resend verification email" })).not.toBeInTheDocument();
+    expect(auth.requestPasswordReset).not.toHaveBeenCalled();
+    expect(auth.sendVerificationEmail).not.toHaveBeenCalled();
   });
 });
 

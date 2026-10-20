@@ -2,13 +2,17 @@ import { useRouteContext } from "@tanstack/react-router";
 import clsx from "clsx";
 import { Info } from "lucide-react";
 
+/** True when this deployment can send verification and password reset emails. */
+export function useEmailDelivery(): boolean {
+  return useRouteContext({ from: "__root__" }).config.emailDelivery;
+}
+
 /**
  * Shown on deployments that cannot send email. AWS SES is unavailable in the Learner Lab,
  * so the public demo uses pre-created, verified synthetic accounts instead.
  */
 export function DemoNotice({ className }: { className?: string }) {
-  const { config } = useRouteContext({ from: "__root__" });
-  if (config.emailDelivery) return null;
+  if (useEmailDelivery()) return null;
   return (
     <div
       role="note"

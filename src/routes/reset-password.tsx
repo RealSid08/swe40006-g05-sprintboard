@@ -47,7 +47,7 @@ function ResetPassword() {
   }
 
   return (
-    <AuthLayout title="Choose a new password" subtitle="Signing in again will be required on your other devices.">
+    <AuthLayout title="Choose a new password" subtitle="You will need to sign in again on your other devices.">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormError message={error} />
         <Field label="New password" htmlFor="password" hint="At least 8 characters.">

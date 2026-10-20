@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { AuthLayout } from "~/components/AuthLayout";
+import { useEmailDelivery } from "~/components/DemoNotice";
 import { Field, FormError, Spinner } from "~/components/ui";
 import { authClient } from "~/lib/auth-client";
 
@@ -16,12 +17,24 @@ const MIN_PASSWORD = 8;
 
 function SignUp() {
   const navigate = useNavigate();
+  const emailDelivery = useEmailDelivery();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD;
+
+  // New accounts must verify by email, so sign-up cannot work while delivery is off.
+  if (!emailDelivery) {
+    return (
+      <AuthLayout title="Sign-up is closed" subtitle="New accounts cannot be verified in this demo.">
+        <Link to="/sign-in" className="btn-primary h-10 w-full">
+          Go to sign in
+        </Link>
+      </AuthLayout>
+    );
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
