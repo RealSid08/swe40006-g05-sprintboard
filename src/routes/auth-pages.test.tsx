@@ -63,7 +63,7 @@ const signUpLinks = () => screen.queryAllByRole("link").filter((link) => link.ge
 describe("landing", () => {
   it("offers sign-up when email delivery works", () => {
     renderPage(Landing);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Plan the sprint");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Keep your team on track");
     expect(screen.queryByTestId("demo-notice")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/sign-up");
   });

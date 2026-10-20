@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("landing page shows the product and the running release", async ({ page, request }) => {
   const health = await (await request.get("/api/health")).json();
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Plan the sprint");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Keep your team on track");
   await expect(page.getByTestId("release")).toContainText(`release ${health.release}`);
   await expect(page.getByRole("link", { name: "Get started" })).toBeVisible();
 });
