@@ -6,6 +6,10 @@ environment=${1:?staging or production required}
 : "${RELEASE_SHA:?}" "${WEB_IMAGE:?}"
 [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 2
 [[ "$WEB_IMAGE" =~ ^ghcr.io/realsid08/sprintboard-g05@sha256:[a-f0-9]{64}$ ]] || exit 2
+if [[ "${REHEARSE_FAILED_STARTUP:-0}" == 1 && "$environment" != staging ]]; then
+  echo 'Startup failure rehearsal is restricted to staging' >&2
+  exit 2
+fi
 runtime=/opt/sprintboard/runtime
 mkdir -p "$runtime/releases" "$runtime/evidence"
 exec 9>"$runtime/deployment.lock"
@@ -23,12 +27,15 @@ set +a
 [[ $(aws --region us-east-1 sts get-caller-identity --query Account --output text) == "${AWS_ACCOUNT_ID:?set pinned AWS account}" ]] || exit 2
 export RELEASE_SHA WEB_IMAGE ENVIRONMENT="$environment" APP_RELEASE="$RELEASE_SHA"
 compose=(docker compose --env-file "$runtime/.env" -f "$release/infra/compose.yml" --profile application --profile monitoring)
+rehearsal_override=''
 previous=''
 [[ ! -f "$runtime/current.json" ]] || previous=$(cat "$runtime/current.json")
 start=$(date -u +%FT%TZ)
 rollback() {
   local exit_code=$?
+  [[ -z "$rehearsal_override" ]] || rm -f "$rehearsal_override"
   trap - ERR
+  unset SMOKE_HEALTH_ATTEMPTS
   printf 'Deployment failed at %s; attempting compatible release rollback\n' "$(date -u +%FT%TZ)" >&2
   if [[ -n "$previous" ]]; then
     local old_sha old_image
@@ -56,6 +63,14 @@ fi
 cd "$release"
 # Use containerized CLI so remote deployment does not depend on global Node or pnpm.
 docker run --rm --network host --env-file "$runtime/backend.env" -e APP_RELEASE="$RELEASE_SHA" -v "$PWD:/app" -w /app node:24.22.0-bookworm-slim bash -c 'corepack enable && pnpm install --frozen-lockfile && node scripts/ops/configure_backend.mjs && pnpm exec convex deploy --yes --typecheck=disable'
+if [[ "${REHEARSE_FAILED_STARTUP:-0}" == 1 ]]; then
+  [[ "$environment" == staging && -n "$previous" ]] || { echo 'Startup failure rehearsal requires a healthy staging release' >&2; exit 2; }
+  rehearsal_override=$(mktemp "$runtime/startup-fault.XXXXXX.yml")
+  printf 'services:\n  web:\n    command: ["node", "-e", "process.exit(42)"]\n' > "$rehearsal_override"
+  compose+=(-f "$rehearsal_override")
+  export SMOKE_HEALTH_ATTEMPTS=4
+  echo 'Controlled staging rehearsal: inject a failed web startup and verify automatic rollback'
+fi
 "${compose[@]}" up -d --no-deps web caddy node-exporter blackbox prometheus grafana alertmanager alert-sink
 python3 scripts/ops/monitoring-smoke.py
 bash scripts/ops/smoke.sh "$SITE_URL" "$RELEASE_SHA"

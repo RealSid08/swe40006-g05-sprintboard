@@ -3,9 +3,11 @@ set -euo pipefail
 base=${1:?HTTPS application URL required}
 sha=${2:?Expected release required}
 [[ "$base" == https://* ]] || { echo 'Public smoke requires HTTPS' >&2; exit 2; }
-for attempt in $(seq 1 40); do
+attempts=${SMOKE_HEALTH_ATTEMPTS:-40}
+[[ "$attempts" =~ ^[0-9]+$ && "$attempts" -ge 1 && "$attempts" -le 40 ]] || exit 2
+for attempt in $(seq 1 "$attempts"); do
   if curl --fail --silent --show-error --max-time 10 "$base/api/health" > /tmp/sprintboard-health-$$.json; then break; fi
-  printf "Health retry %s/40\n" "$attempt" >&2
+  printf "Health retry %s/%s\n" "$attempt" "$attempts" >&2
   sleep 3
 done
 trap 'rm -f /tmp/sprintboard-health-$$.json' EXIT
