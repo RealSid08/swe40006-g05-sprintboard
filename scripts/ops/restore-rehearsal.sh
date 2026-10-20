@@ -9,7 +9,7 @@ set +a
 : "${BACKUP_BUCKET:?}"
 key=${1:?S3 backup key required}
 [[ "$key" == backups/staging/*.tar.gz ]] || exit 2
-[[ $(aws sts get-caller-identity --query Account --output text) == 877560905830 ]] || exit 2
+[[ $(aws sts get-caller-identity --query Account --output text) == "${AWS_ACCOUNT_ID:?set pinned AWS account}" ]] || exit 2
 project="g05-restore-$(date +%s)"
 work=$(mktemp -d "$runtime/restore.XXXXXX")
 chmod 700 "$work"

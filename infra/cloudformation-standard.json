@@ -1,0 +1,534 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "G05 SprintBoard standard AWS: separate CI, staging and production with scoped instance roles",
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "SubnetId": {
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "ImageId": {
+      "Type": "AWS::EC2::Image::Id"
+    },
+    "InstanceType": {
+      "Type": "String",
+      "Default": "c7i-flex.large",
+      "AllowedValues": [
+        "c7i-flex.large",
+        "m7i-flex.large",
+        "t3.small",
+        "t3.medium"
+      ]
+    },
+    "OperatorCidr": {
+      "Type": "String",
+      "AllowedPattern": "([0-9]{1,3}[.]){3}[0-9]{1,3}/32"
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    }
+  },
+  "Resources": {
+    "WebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Public HTTPS, ACME validation and operator SSH only",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": {
+              "Ref": "OperatorCidr"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "Staging": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "IamInstanceProfile": {
+          "Ref": "StagingProfile"
+        },
+        "SubnetId": {
+          "Ref": "SubnetId"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "WebSecurityGroup"
+          }
+        ],
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpEndpoint": "enabled"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 24,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "swe40006-g05-staging"
+          },
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          },
+          {
+            "Key": "Environment",
+            "Value": "staging"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\ndnf install -y docker git\nsystemctl enable --now docker\nmkdir -p /usr/local/lib/docker/cli-plugins /opt/sprintboard\ncurl --fail --location --retry 3 https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose\nchmod 755 /usr/local/lib/docker/cli-plugins/docker-compose\nusermod -aG docker ec2-user\nchown ec2-user:ec2-user /opt/sprintboard\necho 'vm.max_map_count=262144' > /etc/sysctl.d/99-sprintboard.conf\nsysctl --system\n\n# Keep build bursts from exhausting memory; encrypted root volume holds swap.\nfallocate -l 2G /swapfile\nchmod 600 /swapfile\nmkswap /swapfile\nswapon /swapfile\necho \"/swapfile swap swap defaults 0 0\" >> /etc/fstab\ntouch /opt/sprintboard/bootstrap.complete\n"
+        }
+      }
+    },
+    "Production": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "IamInstanceProfile": {
+          "Ref": "ProductionProfile"
+        },
+        "SubnetId": {
+          "Ref": "SubnetId"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "WebSecurityGroup"
+          }
+        ],
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpEndpoint": "enabled"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 24,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\ndnf install -y docker git\nsystemctl enable --now docker\nmkdir -p /usr/local/lib/docker/cli-plugins /opt/sprintboard\ncurl --fail --location --retry 3 https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose\nchmod 755 /usr/local/lib/docker/cli-plugins/docker-compose\nusermod -aG docker ec2-user\nchown ec2-user:ec2-user /opt/sprintboard\necho 'vm.max_map_count=262144' > /etc/sysctl.d/99-sprintboard.conf\nsysctl --system\n\n# Keep build bursts from exhausting memory; encrypted root volume holds swap.\nfallocate -l 2G /swapfile\nchmod 600 /swapfile\nmkswap /swapfile\nswapon /swapfile\necho \"/swapfile swap swap defaults 0 0\" >> /etc/fstab\ntouch /opt/sprintboard/bootstrap.complete\n"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "swe40006-g05-production"
+          },
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          },
+          {
+            "Key": "Environment",
+            "Value": "production"
+          }
+        ]
+      }
+    },
+    "CISecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "CI operator SSH only; no application listeners",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": {
+              "Ref": "OperatorCidr"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "CI": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SubnetId": {
+          "Ref": "SubnetId"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "CISecurityGroup"
+          }
+        ],
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpEndpoint": "enabled"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 24,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "swe40006-g05-ci"
+          },
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          },
+          {
+            "Key": "Environment",
+            "Value": "ci"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\ndnf install -y docker git libicu jq\nsystemctl enable --now docker\nmkdir -p /usr/local/lib/docker/cli-plugins /opt/sprintboard\ncurl --fail --location --retry 3 https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose\nchmod 755 /usr/local/lib/docker/cli-plugins/docker-compose\nusermod -aG docker ec2-user\nchown ec2-user:ec2-user /opt/sprintboard\necho 'vm.max_map_count=262144' > /etc/sysctl.d/99-sprintboard.conf\nsysctl --system\n\n# Keep build bursts from exhausting memory; encrypted root volume holds swap.\nfallocate -l 2G /swapfile\nchmod 600 /swapfile\nmkswap /swapfile\nswapon /swapfile\necho \"/swapfile swap swap defaults 0 0\" >> /etc/fstab\ntouch /opt/sprintboard/bootstrap.complete\n"
+        }
+      }
+    },
+    "StagingAddress": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "Staging"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "ProductionAddress": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "Production"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "Backups": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "ExpireBackups",
+              "Status": "Enabled",
+              "ExpirationInDays": 7,
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 1
+              }
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "StagingRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ProjectDeploymentAndBackups",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "${Backups.Arn}/backups/staging/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": {
+                    "Fn::Sub": "${Backups.Arn}/transport/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "${Backups.Arn}/transport/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "ssm:SendCommand",
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Production}"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ssm:GetCommandInvocation",
+                    "ssm:CancelCommand"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "StagingProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "StagingRole"
+          }
+        ]
+      }
+    },
+    "ProductionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ProjectDeploymentAndBackups",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "${Backups.Arn}/backups/production/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": {
+                    "Fn::Sub": "${Backups.Arn}/transport/*"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "SWE40006-G05"
+          }
+        ]
+      }
+    },
+    "ProductionProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "ProductionRole"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "CIInstance": {
+      "Value": {
+        "Ref": "CI"
+      }
+    },
+    "CIIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "CI",
+          "PublicIp"
+        ]
+      }
+    },
+    "StagingInstance": {
+      "Value": {
+        "Ref": "Staging"
+      }
+    },
+    "ProductionInstance": {
+      "Value": {
+        "Ref": "Production"
+      }
+    },
+    "StagingIP": {
+      "Value": {
+        "Ref": "StagingAddress"
+      }
+    },
+    "ProductionIP": {
+      "Value": {
+        "Ref": "ProductionAddress"
+      }
+    },
+    "BackupBucket": {
+      "Value": {
+        "Ref": "Backups"
+      }
+    }
+  }
+}

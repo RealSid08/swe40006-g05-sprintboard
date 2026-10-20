@@ -17,13 +17,15 @@ import time
 
 
 def aws(service, operation, *args):
-    p = subprocess.run(['aws', '--region', 'us-east-1', service, operation, *args,
+    p = subprocess.run(['aws', '--region', os.environ.get('AWS_DEFAULT_REGION', 'us-east-1'), service, operation, *args,
                         '--output', 'json'], text=True, capture_output=True, check=True)
     return json.loads(p.stdout) if p.stdout.strip() else {}
 
 
 def main():
-    assert aws('sts', 'get-caller-identity')['Account'] == '877560905830'
+    expected_account = os.environ['AWS_ACCOUNT_ID']
+    assert re.fullmatch(r'\d{12}', expected_account)
+    assert aws('sts', 'get-caller-identity')['Account'] == expected_account
     sha, image = os.environ['RELEASE_SHA'], os.environ['WEB_IMAGE']
     assert re.fullmatch('[0-9a-f]{40}', sha)
     assert re.fullmatch(r'ghcr.io/realsid08/sprintboard-g05@sha256:[0-9a-f]{64}', image)
