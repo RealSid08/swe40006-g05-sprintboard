@@ -49,12 +49,16 @@ describe("AppShell", () => {
 });
 
 describe("demo notice", () => {
-  it("is hidden when email delivery works and explains the SES limitation otherwise", () => {
+  it("is hidden when email delivery works and explains that email is disabled otherwise", () => {
     const { rerender } = render(<DemoNotice />);
     expect(screen.queryByTestId("demo-notice")).not.toBeInTheDocument();
     routerState.context.config.emailDelivery = false;
     rerender(<DemoNotice />);
-    expect(screen.getByTestId("demo-notice")).toHaveTextContent("AWS SES is unavailable in the Learner Lab");
+    expect(screen.getByTestId("demo-notice")).toHaveTextContent(
+      "Email delivery is disabled, so verification and password reset emails are not sent.",
+    );
+    expect(screen.getByTestId("demo-notice")).toHaveTextContent("Sign in with a provided demo account.");
+    expect(screen.getByTestId("demo-notice")).not.toHaveTextContent(/SES|Learner Lab/);
   });
 
   it("appears inside the auth layout", () => {

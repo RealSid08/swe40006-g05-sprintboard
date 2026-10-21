@@ -8,8 +8,8 @@ export function useEmailDelivery(): boolean {
 }
 
 /**
- * Shown on deployments that cannot send email. AWS SES is unavailable in the Learner Lab,
- * so the public demo uses pre-created, verified synthetic accounts instead.
+ * Shown on deployments with email delivery disabled (`EMAIL_TRANSPORT=disabled`), where the
+ * public demo uses pre-created, verified synthetic accounts instead.
  */
 export function DemoNotice({ className }: { className?: string }) {
   if (useEmailDelivery()) return null;
@@ -24,8 +24,8 @@ export function DemoNotice({ className }: { className?: string }) {
     >
       <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <p>
-        Demo deployment. Email delivery is turned off because AWS SES is unavailable in the Learner Lab, so
-        verification and password reset emails are not sent. Sign in with a provided demo account.
+        Demo deployment. Email delivery is disabled, so verification and password reset emails are not sent.
+        Sign in with a provided demo account.
       </p>
     </div>
   );
