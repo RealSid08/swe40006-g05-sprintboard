@@ -58,8 +58,6 @@ describe("route guards", () => {
   });
 });
 
-const signUpLinks = () => screen.queryAllByRole("link").filter((link) => link.getAttribute("href") === "/sign-up");
-
 describe("landing", () => {
   it("offers sign-up when email delivery works", () => {
     renderPage(Landing);
@@ -68,12 +66,15 @@ describe("landing", () => {
     expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/sign-up");
   });
 
-  it("sends visitors to sign in instead of sign-up when email is disabled", () => {
+  it("still invites visitors to sign up when email is disabled, without promising verification", () => {
     routerState.context.config.emailDelivery = false;
     renderPage(Landing);
     expect(screen.getByTestId("demo-notice")).toBeInTheDocument();
-    expect(signUpLinks()).toHaveLength(0);
-    expect(screen.getByRole("link", { name: "Sign in with a demo account" })).toHaveAttribute("href", "/sign-in");
+    expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/sign-up");
+    expect(screen.getByRole("link", { name: "Create a free account" })).toHaveAttribute("href", "/sign-up");
+    expect(screen.queryByText(/demo account/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Email verification/)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Secure accounts" })).toBeInTheDocument();
   });
 });
 
@@ -82,21 +83,43 @@ describe("without email delivery", () => {
     routerState.context.config.emailDelivery = false;
   });
 
-  it("closes sign-up and points to sign in", () => {
+  it("creates an account and goes straight to the projects page", async () => {
     renderPage(SignUp);
-    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to sign in" })).toHaveAttribute("href", "/sign-in");
+    expect(screen.getByText("No email verification needed. You will go straight to your projects.")).toBeInTheDocument();
+    expect(screen.queryByText(/We will email you/)).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Full name"), "Ada");
+    await userEvent.type(screen.getByLabelText("Email"), "ada@example.test");
+    await userEvent.type(screen.getByLabelText("Password"), "short");
+    expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+    expect(screen.getByText("Use at least 8 characters.")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Password"), "-enough");
+    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(auth.signUp.email).toHaveBeenCalledWith({ name: "Ada", email: "ada@example.test", password: "short-enough", callbackURL: "/projects" });
+    expect(assign).toHaveBeenCalledWith("/projects");
+    expect(routerState.navigate).not.toHaveBeenCalled();
   });
 
-  it("hides sign-up and recovery links on sign in and still rejects unverified accounts", async () => {
+  it("stays on sign-up and shows the error when registration fails", async () => {
+    auth.signUp.email.mockResolvedValueOnce({ error: { message: "User already exists" } });
+    renderPage(SignUp);
+    await userEvent.type(screen.getByLabelText("Full name"), "Ada");
+    await userEvent.type(screen.getByLabelText("Email"), "ada@example.test");
+    await userEvent.type(screen.getByLabelText("Password"), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("User already exists");
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
+  });
+
+  it("offers sign-up but hides recovery on sign in, and handles a never-verified account", async () => {
     auth.signIn.email.mockResolvedValueOnce({ error: { code: "EMAIL_NOT_VERIFIED", message: "x" } });
     renderPage(SignIn);
-    expect(signUpLinks()).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/sign-up");
     expect(screen.queryByRole("link", { name: "Forgot password?" })).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Email"), "a@example.test");
     await userEvent.type(screen.getByLabelText("Password"), "password123");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("not verified");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Create a new account instead.");
     expect(screen.queryByRole("link", { name: "Open verification help" })).not.toBeInTheDocument();
     expect(assign).not.toHaveBeenCalled();
   });
@@ -107,6 +130,7 @@ describe("without email delivery", () => {
     unmount();
     routerState.search = { email: "ada@example.test" };
     renderPage(Verify);
+    expect(screen.getByRole("heading", { name: "No verification needed" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Resend verification email" })).not.toBeInTheDocument();
     expect(auth.requestPasswordReset).not.toHaveBeenCalled();
     expect(auth.sendVerificationEmail).not.toHaveBeenCalled();
@@ -152,6 +176,8 @@ describe("sign up", () => {
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
     expect(auth.signUp.email).toHaveBeenCalledWith({ name: "Ada", email: "ada@example.test", password: "short-enough", callbackURL: "/projects" });
     expect(routerState.navigate).toHaveBeenCalledWith({ to: "/verify-email", search: { email: "ada@example.test" } });
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.getByText("We will email you a link to verify your address.")).toBeInTheDocument();
   });
 
   it("shows sign-up errors", async () => {

@@ -33,12 +33,12 @@ function VerifyEmail() {
   if (!emailDelivery) {
     return (
       <AuthLayout
-        title="Email verification is unavailable"
-        subtitle="This demo cannot send verification emails, so new accounts cannot be activated."
+        title="No verification needed"
+        subtitle="This demo does not send emails, so new accounts can sign in straight away."
         footer={footer}
       >
         <Link to="/sign-in" className="btn-primary h-10 w-full">
-          Sign in with a demo account
+          Go to sign in
         </Link>
       </AuthLayout>
     );

@@ -25,17 +25,6 @@ function SignUp() {
   const [pending, setPending] = useState(false);
   const passwordTooShort = password.length > 0 && password.length < MIN_PASSWORD;
 
-  // New accounts must verify by email, so sign-up cannot work while delivery is off.
-  if (!emailDelivery) {
-    return (
-      <AuthLayout title="Sign-up is closed" subtitle="New accounts cannot be verified in this demo.">
-        <Link to="/sign-in" className="btn-primary h-10 w-full">
-          Go to sign in
-        </Link>
-      </AuthLayout>
-    );
-  }
-
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (password.length < MIN_PASSWORD) return;
@@ -47,11 +36,18 @@ function SignUp() {
       password,
       callbackURL: "/projects",
     });
-    setPending(false);
     if (signUpError) {
+      setPending(false);
       setError(signUpError.message ?? "We could not create that account.");
       return;
     }
+    // Without email delivery the backend skips verification and signs the new account in, so go
+    // straight to the projects page (full navigation so the server render picks up the session cookie).
+    if (!emailDelivery) {
+      window.location.assign("/projects");
+      return;
+    }
+    setPending(false);
     await navigate({ to: "/verify-email", search: { email: email.trim() } });
   }
 
@@ -117,7 +113,11 @@ function SignUp() {
           {pending ? <Spinner /> : null}
           Create account
         </button>
-        <p className="text-center text-xs text-ink-faint">We will email you a link to verify your address.</p>
+        <p className="text-center text-xs text-ink-faint">
+          {emailDelivery
+            ? "We will email you a link to verify your address."
+            : "No email verification needed. You will go straight to your projects."}
+        </p>
       </form>
     </AuthLayout>
   );
