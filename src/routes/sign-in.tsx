@@ -46,7 +46,7 @@ function SignIn() {
           setUnverified(true);
           setError("Verify your email before signing in. We just sent you a fresh link.");
         } else {
-          setError("This account is not verified, and this demo cannot send verification emails. Use a provided demo account.");
+          setError("This account was never verified, and this demo cannot send verification emails. Create a new account instead.");
         }
       } else {
         setError(signInError.message ?? "Incorrect email or password.");
@@ -62,14 +62,12 @@ function SignIn() {
       title="Welcome back"
       subtitle="Sign in to see your projects and boards."
       footer={
-        emailDelivery ? (
-          <>
-            New to SprintBoard?{" "}
-            <Link to="/sign-up" className="font-medium text-accent hover:underline">
-              Create an account
-            </Link>
-          </>
-        ) : undefined
+        <>
+          New to SprintBoard?{" "}
+          <Link to="/sign-up" className="font-medium text-accent hover:underline">
+            Create an account
+          </Link>
+        </>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>

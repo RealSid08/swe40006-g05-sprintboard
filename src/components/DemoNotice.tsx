@@ -8,8 +8,8 @@ export function useEmailDelivery(): boolean {
 }
 
 /**
- * Shown on deployments with email delivery disabled (`EMAIL_TRANSPORT=disabled`), where the
- * public demo uses pre-created, verified synthetic accounts instead.
+ * Shown on deployments with email delivery disabled (`EMAIL_TRANSPORT=disabled`). There the backend
+ * skips email verification, so visitors can register and start straight away.
  */
 export function DemoNotice({ className }: { className?: string }) {
   if (useEmailDelivery()) return null;
@@ -24,8 +24,8 @@ export function DemoNotice({ className }: { className?: string }) {
     >
       <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <p>
-        Demo deployment. Email delivery is disabled, so verification and password reset emails are not sent.
-        Sign in with a provided demo account.
+        Demo deployment. Create an account and start right away, with no email verification step. Email delivery
+        is off, so password reset emails are not sent. Keep your password somewhere safe.
       </p>
     </div>
   );

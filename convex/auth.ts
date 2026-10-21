@@ -55,7 +55,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: env.EMAIL_TRANSPORT !== "disabled",
       minPasswordLength: 8,
       maxPasswordLength: 128,
       revokeSessionsOnPasswordReset: true,
@@ -68,8 +68,8 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
       },
     },
     emailVerification: {
-      sendOnSignUp: true,
-      sendOnSignIn: true,
+      sendOnSignUp: env.EMAIL_TRANSPORT !== "disabled",
+      sendOnSignIn: env.EMAIL_TRANSPORT !== "disabled",
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
         await requireRunMutationCtx(ctx).runMutation(internal.email.queue, {

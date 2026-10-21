@@ -49,15 +49,15 @@ describe("AppShell", () => {
 });
 
 describe("demo notice", () => {
-  it("is hidden when email delivery works and explains that email is disabled otherwise", () => {
+  it("is hidden when email delivery works and explains self-registration without email otherwise", () => {
     const { rerender } = render(<DemoNotice />);
     expect(screen.queryByTestId("demo-notice")).not.toBeInTheDocument();
     routerState.context.config.emailDelivery = false;
     rerender(<DemoNotice />);
-    expect(screen.getByTestId("demo-notice")).toHaveTextContent(
-      "Email delivery is disabled, so verification and password reset emails are not sent.",
-    );
-    expect(screen.getByTestId("demo-notice")).toHaveTextContent("Sign in with a provided demo account.");
+    const notice = screen.getByTestId("demo-notice");
+    expect(notice).toHaveTextContent("Create an account and start right away, with no email verification step.");
+    expect(notice).toHaveTextContent("Email delivery is off, so password reset emails are not sent.");
+    expect(notice).not.toHaveTextContent(/provided demo account/);
     expect(screen.getByTestId("demo-notice")).not.toHaveTextContent(/SES|Learner Lab/);
   });
 

@@ -152,7 +152,7 @@ export function MembersPanel({
           </div>
         )}
         {isOwner ? (
-          <p className="text-xs text-ink-faint">Teammates need a verified SprintBoard account first.</p>
+          <p className="text-xs text-ink-faint">Teammates need a SprintBoard account first.</p>
         ) : null}
       </div>
     </section>

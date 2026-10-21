@@ -30,7 +30,7 @@ function ForgotPassword() {
         footer={footer}
       >
         <Link to="/sign-in" className="btn-primary h-10 w-full">
-          Sign in with a demo account
+          Go to sign in
         </Link>
       </AuthLayout>
     );
