@@ -11,7 +11,7 @@ concurrency:
 jobs:
   quality:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, linux, x64, g05-ci]
+    runs-on: [self-hosted, linux, x64, g05-real-ci]
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,7 +49,7 @@ jobs:
   image:
     needs: quality
     if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
-    runs-on: [self-hosted, linux, x64, g05-ci]
+    runs-on: [self-hosted, linux, x64, g05-real-ci]
     permissions:
       contents: read
       packages: write
@@ -95,7 +95,7 @@ jobs:
   staging:
     needs: image
     if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
-    runs-on: [self-hosted, linux, x64, g05-staging]
+    runs-on: [self-hosted, linux, x64, g05-real-staging]
     timeout-minutes: 20
     permissions:
       contents: read
@@ -150,7 +150,7 @@ jobs:
   production:
     needs: [image, staging]
     if: needs.staging.outputs.tested == 'true'
-    runs-on: [self-hosted, linux, x64, g05-staging]
+    runs-on: [self-hosted, linux, x64, g05-real-staging]
     timeout-minutes: 12
     permissions:
       contents: read
@@ -163,6 +163,7 @@ jobs:
           WEB_IMAGE: ghcr.io/realsid08/sprintboard-g05@${{ needs.image.outputs.digest }}
           PRODUCTION_INSTANCE_ID: ${{ vars.PRODUCTION_INSTANCE_ID }}
           RELEASE_BUCKET: ${{ vars.RELEASE_BUCKET }}
-          AWS_DEFAULT_REGION: us-east-1
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/ops/promote.py

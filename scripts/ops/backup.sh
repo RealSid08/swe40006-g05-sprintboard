@@ -6,7 +6,7 @@ set -a
 source "$runtime/.env"
 set +a
 : "${BACKUP_BUCKET:?}"
-[[ $(aws sts get-caller-identity --query Account --output text) == 877560905830 ]] || exit 2
+[[ $(aws sts get-caller-identity --query Account --output text) == "${AWS_ACCOUNT_ID:?set pinned AWS account}" ]] || exit 2
 cd "$runtime"
 compose=(docker compose --env-file .env -f compose.yml)
 backup=$(mktemp -d "$runtime/backup.XXXXXX")

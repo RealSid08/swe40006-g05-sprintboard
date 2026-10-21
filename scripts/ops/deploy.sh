@@ -20,7 +20,7 @@ set -a
 source "$runtime/.env"
 set +a
 [[ "$ENVIRONMENT" == "$environment" ]] || { echo "Target environment mismatch" >&2; exit 2; }
-[[ $(aws --region us-east-1 sts get-caller-identity --query Account --output text) == 877560905830 ]] || exit 2
+[[ $(aws --region us-east-1 sts get-caller-identity --query Account --output text) == "${AWS_ACCOUNT_ID:?set pinned AWS account}" ]] || exit 2
 export RELEASE_SHA WEB_IMAGE ENVIRONMENT="$environment" APP_RELEASE="$RELEASE_SHA"
 compose=(docker compose --env-file "$runtime/.env" -f "$release/infra/compose.yml" --profile application --profile monitoring)
 previous=''
