@@ -59,7 +59,12 @@ cp "$release/infra/compose.yml" "$runtime/compose.yml"
 if [[ -n "$previous" ]]; then
   bash "$release/scripts/ops/backup.sh"
 fi
-"${compose[@]}" pull web
+if [[ "${REHEARSE_FAILED_STARTUP:-0}" == 1 ]]; then
+  # The rehearsal exercises startup recovery using the already tested local image.
+  docker image inspect "$WEB_IMAGE" >/dev/null
+else
+  "${compose[@]}" pull web
+fi
 cd "$release"
 # Use containerized CLI so remote deployment does not depend on global Node or pnpm.
 docker run --rm --network host --env-file "$runtime/backend.env" -e APP_RELEASE="$RELEASE_SHA" -v "$PWD:/app" -w /app node:24.22.0-bookworm-slim bash -c 'corepack enable && pnpm install --frozen-lockfile && node scripts/ops/configure_backend.mjs && pnpm exec convex deploy --yes --typecheck=disable'
