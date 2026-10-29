@@ -74,6 +74,7 @@ jobs:
           image-ref: ghcr.io/realsid08/sprintboard-g05@${{ steps.build.outputs.digest }}
           format: json
           output: trivy-image.json
+          trivyignores: .trivyignore.yaml
           severity: HIGH,CRITICAL
           exit-code: '1'
           version: v0.76.0

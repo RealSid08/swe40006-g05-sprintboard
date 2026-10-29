@@ -9,3 +9,21 @@ misconfigurations:
       all public access blocked and seven-day expiry. SSE-S3 satisfies the project's
       encrypted-backup requirement. Customer-managed key administration is outside
       this project scope. Owner G05; implementation review 2026-10-20.
+vulnerabilities:
+  - id: CVE-2026-114607
+    expired_at: 2026-12-01
+    statement: >-
+      GHSA-965c-763c-88jm needs the Magic Link plugin together with social or Generic OAuth
+      sign-in. SprintBoard enables only email and password sign-in and the Convex plugin
+      (convex/auth.ts). The fix (better-auth 1.7.7) is outside the range supported by
+      @convex-dev/better-auth 0.12.x (>=1.6.11 <1.7.0). Owner G05; reviewed 2026-10-30.
+  - id: GHSA-q84f-53jg-9ppm
+    expired_at: 2026-12-01
+    statement: >-
+      Affects only the opt-in deviceAuthorization() plugin, which SprintBoard does not enable.
+      Upgrade blocked by the @convex-dev/better-auth peer range. Owner G05; reviewed 2026-10-30.
+  - id: GHSA-r4xp-prcw-77qf
+    expired_at: 2026-12-01
+    statement: >-
+      Affects only the OAuth Proxy plugin, which SprintBoard does not enable. Upgrade blocked by
+      the @convex-dev/better-auth peer range. Owner G05; reviewed 2026-10-30.
