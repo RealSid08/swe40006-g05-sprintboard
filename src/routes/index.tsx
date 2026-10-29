@@ -52,7 +52,7 @@ function Landing() {
             Built for small student teams
           </p>
           <h1 className="text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
-            Keep your team on track, one sprint at a time.
+            Plan every sprint together, from first task to final demo.
           </h1>
           <p className="mt-5 text-lg text-ink-soft">
             SprintBoard gives your team one shared task board with clear owners, priorities, due dates and a live

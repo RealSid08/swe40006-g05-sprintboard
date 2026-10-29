@@ -61,7 +61,7 @@ describe("route guards", () => {
 describe("landing", () => {
   it("offers sign-up when email delivery works", () => {
     renderPage(Landing);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Keep your team on track");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Plan every sprint together");
     expect(screen.queryByTestId("demo-notice")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/sign-up");
   });
